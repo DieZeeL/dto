@@ -20,6 +20,13 @@ trait HasProperties
     protected $propertiesMap;
 
     /**
+     * Alternative Maped properties
+     *
+     * @var array
+     */
+    protected static $remapProperties = [];
+
+    /**
      * Retrieve the DTO properties map
      *
      * @return array
@@ -27,6 +34,16 @@ trait HasProperties
     public function getPropertiesMap(): array
     {
         return $this->propertiesMap;
+    }
+
+    /**
+     * Retrieve the DTO properties map
+     *
+     * @return array
+     */
+    public function getRemapProperties(): array
+    {
+        return static::$remapProperties;
     }
 
     /**
@@ -132,7 +149,8 @@ trait HasProperties
     {
         $mergedData = array_merge(static::getDefaultValues(), $data);
 
-        return DtoPropertiesMapper::for(static::class)->map($mergedData, $this->getFlags());
+        return DtoPropertiesMapper::for(static::class)
+            ->map($mergedData, $this->getFlags(), $this->getRemapProperties());
     }
 
     /**

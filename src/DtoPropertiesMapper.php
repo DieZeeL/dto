@@ -69,6 +69,13 @@ class DtoPropertiesMapper
     protected $useStatements;
 
     /**
+     * The cached modify methods.
+     *
+     * @var \ReflectionMethod[]
+     */
+    protected $modifyMethods;
+
+    /**
      * The cached mapped properties.
      *
      * @var array
@@ -167,22 +174,30 @@ class DtoPropertiesMapper
      *
      * @param  array  $data
      * @param  int  $flags
+     * @param  array  $remaped
      * @return array
      * @throws InvalidDocCommentException
      * @throws MissingValueException
      * @throws UnexpectedValueException
      * @throws UnknownDtoPropertyException
      */
-    public function map(array $data, int $flags): array
+    public function map(array $data, int $flags, array $remap = []): array
     {
         $mappedProperties = [];
         $rawProperties = $this->cacheRawProperties();
         $useStatements = $this->cacheUseStatements();
+        $modifyMethods = $this->cacheModifyMethods();
 
         foreach ($rawProperties as $name => $rawTypes) {
             $cachedProperty = $this->mappedProperties[$name] ?? null;
+
             $types = $cachedProperty ? $cachedProperty->getTypes() : $this->parseTypes($rawTypes, $useStatements);
-            $key = $this->getPropertyKeyFromData($name, $data);
+
+            if (array_key_exists($name, $remap)) {
+                $key = $this->getPropertyKeyFromData($remap[$name], $data);
+            } else {
+                $key = $this->getPropertyKeyFromData($name, $data);
+            }
 
             if (!array_key_exists($key, $data)) {
                 if ($flags & PARTIAL) {
@@ -192,7 +207,12 @@ class DtoPropertiesMapper
                 throw new MissingValueException($this->dtoClass, $name);
             }
 
-            $mappedProperties[$name] = DtoProperty::create($name, $data[$key], $types, $flags);
+
+            $closure = array_key_exists($name, $modifyMethods)
+                ? $modifyMethods[$name]->getClosure()
+                : null;
+
+            $mappedProperties[$name] = DtoProperty::create($name, $data[$key], $types, $flags, $closure);
             unset($data[$key]);
         }
 
@@ -295,5 +315,23 @@ class DtoPropertiesMapper
         if ($data && !($flags & IGNORE_UNKNOWN_PROPERTIES)) {
             throw new UnknownDtoPropertyException($this->dtoClass, key($data));
         }
+    }
+
+    /**
+     * Retrieve and cache the DTO "use" statements
+     *
+     * @return array
+     */
+    protected function cacheModifyMethods(): array
+    {
+        if (isset($this->modifyMethods)) {
+            return $this->modifyMethods;
+        }
+        $methods = $this->reflection->getMethods(\ReflectionMethod::IS_STATIC);
+        foreach ($methods as $method) {
+            /** @var \ReflectionMethod $method */
+            $this->modifyMethods[$method->getName()] = $method;
+        }
+        return $this->modifyMethods;
     }
 }

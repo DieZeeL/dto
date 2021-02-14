@@ -42,16 +42,20 @@ class UnexpectedValueException extends TypeError implements DtoException
         $typeNames = implode("', '", $declaredNames);
         $types = count($declaredNames) == 1 ? "of type '{$typeNames}'" : "one of these types: '{$typeNames}'";
         $value = $this->property->getRawValue();
+        $processedValue = $this->property->value();
         $actualType = gettype($value);
+        $actualTypeProcessed = gettype($processedValue);
 
-        if ($value === null) {
-            $value = 'null';
-        } elseif (is_array($value)) {
-            $value = 'array';
-        } elseif (is_object($value)) {
-            $value = get_class($value);
+        foreach ([$value,$processedValue] as &$val) {
+            if ($val === null) {
+                $val = 'null';
+            } elseif (is_array($val)) {
+                $val = 'array';
+            } elseif (is_object($val)) {
+                $val = get_class($val);
+            }
         }
 
-        return "Invalid type: expected '{$name}' to be {$types}. Got `{$value}` ({$actualType}) instead";
+        return "Invalid type: expected '{$name}' to be {$types}. Got `{$value}` ({$actualType}) -> `{$processedValue}` ({$actualTypeProcessed}) instead";
     }
 }

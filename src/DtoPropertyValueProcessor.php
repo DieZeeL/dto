@@ -74,6 +74,8 @@ class DtoPropertyValueProcessor
             return $converter->toDto($value);
         } elseif ($types->expectedDto) {
             return $this->castValueIntoDto($value);
+        } elseif ($closure = $this->property->getClosure()){
+            return $closure($value);
         } elseif (($this->property->getFlags() & CAST_PRIMITIVES) && $type = $types->expectedPrimitive) {
             settype($value, $type);
         }

@@ -39,6 +39,11 @@ class DtoProperty
     protected $flags;
 
     /**
+     * @var \Closure;
+     */
+    protected $closure = null;
+
+    /**
      * The property value processor.
      *
      * @var DtoPropertyValueProcessor
@@ -67,12 +72,13 @@ class DtoProperty
      * @param DtoPropertyTypes $types
      * @param int $flags
      */
-    protected function __construct(string $name, $rawValue, DtoPropertyTypes $types, int $flags)
+    protected function __construct(string $name, $rawValue, DtoPropertyTypes $types, int $flags, ?\Closure $closure)
     {
         $this->name = $name;
         $this->rawValue = $rawValue;
         $this->types = $types;
         $this->flags = $flags;
+        $this->closure = $closure;
         $this->valueProcessor = new DtoPropertyValueProcessor($this);
     }
 
@@ -83,12 +89,13 @@ class DtoProperty
      * @param mixed $rawValue
      * @param DtoPropertyTypes $types
      * @param int $flags
+     * @param ?\Closure $closure
      * @return self
      * @throws UnexpectedValueException
      */
-    public static function create(string $name, $rawValue, DtoPropertyTypes $types, int $flags): self
+    public static function create(string $name, $rawValue, DtoPropertyTypes $types, int $flags, ?\Closure $closure): self
     {
-        $instance = new static($name, $rawValue, $types, $flags);
+        $instance = new static($name, $rawValue, $types, $flags, $closure);
 
         return $instance->validate();
     }
@@ -167,6 +174,16 @@ class DtoProperty
     public function getFlags(): int
     {
         return $this->flags;
+    }
+
+    /**
+     * Retrieve the DTO flags
+     *
+     * @return int
+     */
+    public function getClosure(): ?\Closure
+    {
+        return $this->closure;
     }
 
     /**
