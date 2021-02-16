@@ -32,7 +32,7 @@ class DtoPropertyValueProcessor
      */
     public function process()
     {
-        if (is_null($rawValue = $this->property->getRawValue())) {
+        if (is_null($rawValue = $this->property->getRawValue()) && !$this->property->getClosure()) {
             return null;
         }
 
@@ -70,13 +70,15 @@ class DtoPropertyValueProcessor
     {
         $types = $this->property->getTypes();
 
+        if($this->property->hasClosure()){
+            $value = call_user_func($this->property->getClosure(), $value);
+        }
+
         if ($converter = $types->expectedConverter) {
             return $converter->toDto($value);
         } elseif ($types->expectedDto) {
             return $this->castValueIntoDto($value);
-        } elseif ($closure = $this->property->getClosure()){
-            return $closure($value);
-        } elseif (($this->property->getFlags() & CAST_PRIMITIVES) && $type = $types->expectedPrimitive) {
+        }  elseif (($this->property->getFlags() & CAST_PRIMITIVES) && $type = $types->expectedPrimitive) {
             settype($value, $type);
         }
 

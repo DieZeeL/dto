@@ -29,6 +29,11 @@ trait TurnsIntoArray
         $snakeCase = !($this->getFlags() & CAMEL_CASE_ARRAY);
 
         foreach ($this->getPropertiesMap() as $name => $property) {
+            if($property->hasClosure()){
+                $property->setClosure(function ($value)  use ($name){
+                    return $this->{$name.'Attribute'}($value);
+                });
+            }
             $key = ArrayConverter::instance()->formatKey($name, $snakeCase);
             $data[$key] = ArrayConverter::instance()->convert($property->value(), $snakeCase);
         }
@@ -66,6 +71,7 @@ trait TurnsIntoArray
      */
     public function &offsetGet($property)
     {
+
         $value = $this->get($property);
 
         return $value;

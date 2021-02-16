@@ -44,6 +44,12 @@ class DtoProperty
     protected $closure = null;
 
     /**
+     * @var bool
+     */
+    protected $expectClosure = false;
+
+
+    /**
      * The property value processor.
      *
      * @var DtoPropertyValueProcessor
@@ -72,13 +78,13 @@ class DtoProperty
      * @param DtoPropertyTypes $types
      * @param int $flags
      */
-    protected function __construct(string $name, $rawValue, DtoPropertyTypes $types, int $flags, ?\Closure $closure)
+    protected function __construct(string $name, $rawValue, DtoPropertyTypes $types, int $flags, bool $closure)
     {
         $this->name = $name;
         $this->rawValue = $rawValue;
         $this->types = $types;
         $this->flags = $flags;
-        $this->closure = $closure;
+        $this->expectClosure = $closure;
         $this->valueProcessor = new DtoPropertyValueProcessor($this);
     }
 
@@ -89,11 +95,11 @@ class DtoProperty
      * @param mixed $rawValue
      * @param DtoPropertyTypes $types
      * @param int $flags
-     * @param ?\Closure $closure
+     * @param bool $closure
      * @return self
      * @throws UnexpectedValueException
      */
-    public static function create(string $name, $rawValue, DtoPropertyTypes $types, int $flags, ?\Closure $closure): self
+    public static function create(string $name, $rawValue, DtoPropertyTypes $types, int $flags, bool $closure): self
     {
         $instance = new static($name, $rawValue, $types, $flags, $closure);
 
@@ -114,6 +120,7 @@ class DtoProperty
             case $this->types->expectedDto && $canBeDto:
             case $this->rawValue === null && $this->types->includeNull:
             case $this->types->expectCollection && is_iterable($this->rawValue):
+            case $this->hasClosure():
             case $this->types->match($this->value()):
                 return $this;
         }
@@ -177,13 +184,44 @@ class DtoProperty
     }
 
     /**
-     * Retrieve the DTO flags
+     * Retrieve closure method
      *
      * @return int
      */
     public function getClosure(): ?\Closure
     {
         return $this->closure;
+    }
+
+    /**
+     * Retrieve closure method
+     *
+     * @return int
+     */
+    public function setClosure($closure): self
+    {
+        $this->closure = $closure;
+        return $this;
+    }
+
+    /**
+     * Retrieve closure method
+     *
+     * @return bool
+     */
+    public function hasClosure(): bool
+    {
+        return $this->expectClosure;
+    }
+
+    /**
+     * Retrieve the Origin Values
+     *
+     * @return int
+     */
+    public function getOrigins(): ?array
+    {
+        return $this->originData;
     }
 
     /**

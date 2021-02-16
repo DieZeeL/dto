@@ -57,7 +57,13 @@ trait HasValues
      */
     public function get(string $property)
     {
-        $value = $this->getProperty($property)->value();
+        $propertyObj = $this->getProperty($property);
+        if($propertyObj->hasClosure()){
+            $propertyObj->setClosure(function ($value) use ($property){
+                return $this->{$property.'Attribute'}($value);
+            });
+        }
+        $value = $propertyObj->value();
 
         return $this->getListener()->getting(static::class, $property, $value);
     }

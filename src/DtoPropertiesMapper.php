@@ -199,7 +199,9 @@ class DtoPropertiesMapper
                 $key = $this->getPropertyKeyFromData($name, $data);
             }
 
-            if (!array_key_exists($key, $data)) {
+            $closure = array_key_exists($name, $modifyMethods);
+
+            if (!array_key_exists($key, $data) && !$closure) {
                 if ($flags & PARTIAL) {
                     continue;
                 }
@@ -207,12 +209,9 @@ class DtoPropertiesMapper
                 throw new MissingValueException($this->dtoClass, $name);
             }
 
+            $value = $data[$key] ?? null ;
 
-            $closure = array_key_exists($name, $modifyMethods)
-                ? $modifyMethods[$name]->getClosure()
-                : null;
-
-            $mappedProperties[$name] = DtoProperty::create($name, $data[$key], $types, $flags, $closure);
+            $mappedProperties[$name] = DtoProperty::create($name, $value, $types, $flags, $closure);
             unset($data[$key]);
         }
 
@@ -327,10 +326,13 @@ class DtoPropertiesMapper
         if (isset($this->modifyMethods)) {
             return $this->modifyMethods;
         }
-        $methods = $this->reflection->getMethods(\ReflectionMethod::IS_STATIC);
+        $this->modifyMethods = [];
+        $methods = $this->reflection->getMethods(\ReflectionMethod::IS_PUBLIC);
         foreach ($methods as $method) {
             /** @var \ReflectionMethod $method */
-            $this->modifyMethods[$method->getName()] = $method;
+            if(str_ends_with($method->getName(),'Attribute')){
+                $this->modifyMethods[substr($method->getName(),0,-9)] = $method;
+            }
         }
         return $this->modifyMethods;
     }
