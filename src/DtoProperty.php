@@ -111,6 +111,7 @@ class DtoProperty
      *
      * @return self
      * @throws UnexpectedValueException
+     * @todo Change Validation (validate after Closure);
      */
     public function validate(): self
     {
@@ -132,12 +133,17 @@ class DtoProperty
      * Retrieve the processed value
      *
      * @return void
+     * @todo remove null validation after changes in validate() method
      */
     public function value()
     {
         if (!$this->valueIsProcessed) {
             $this->processedValue = $this->valueProcessor->process();
             $this->valueIsProcessed = true;
+
+            if ($this->processedValue === null && !$this->types->includeNull) {
+                throw new UnexpectedValueException($this);
+            }
         }
 
         return $this->processedValue;

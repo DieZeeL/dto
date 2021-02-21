@@ -70,15 +70,17 @@ class DtoPropertyValueProcessor
     {
         $types = $this->property->getTypes();
 
-        if($this->property->hasClosure()){
+        if ($this->property->hasClosure()) {
             $value = call_user_func($this->property->getClosure(), $value);
         }
 
-        if ($converter = $types->expectedConverter) {
+        if (is_null($value)) {
+            return null;
+        } elseif ($converter = $types->expectedConverter) {
             return $converter->toDto($value);
         } elseif ($types->expectedDto) {
             return $this->castValueIntoDto($value);
-        }  elseif (($this->property->getFlags() & CAST_PRIMITIVES) && $type = $types->expectedPrimitive) {
+        } elseif (($this->property->getFlags() & CAST_PRIMITIVES) && $type = $types->expectedPrimitive) {
             settype($value, $type);
         }
 
